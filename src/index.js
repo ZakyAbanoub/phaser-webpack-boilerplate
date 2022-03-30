@@ -4,6 +4,7 @@ import Phaser from "phaser";
 function preload() {
   this.load.image("sky", "assets/sky.png");
   this.load.image("bird", "assets/bird.png");
+  this.load.image('pipe', "assets/pipe.png")
 }
 
 // create objects instance
@@ -12,12 +13,33 @@ function preload() {
 // key of the image
 // To have the full screen can i add as argument the half of the width and height or setOrigin to 0
 
+// const VELOCITY = 200
+const flapVelocity = 250
 let bird = null;
-let totalDelta = null;
+let upperPipe = null;
+let lowerPipe = null;
+function flap() {
+  bird.body.velocity.y = -flapVelocity
+}
+
+function restartBirdPosition() {
+  bird.x = initialBirdPosition.x;
+  bird.y = initialBirdPosition.y;
+  bird.body.velocity.y = 0
+}
 
 function create() {
   this.add.image(0, 0, "sky").setOrigin(0);
-  bird = this.physics.add.sprite(config.width / 10, config.height / 2, "bird");
+  bird = this.physics.add.sprite(initialBirdPosition.x, initialBirdPosition.y, "bird");
+  bird.body.gravity.y = 400;
+
+  upperPipe = this.physics.add.sprite(400, 100, 'pipe').setOrigin(0, 1)
+  lowerPipe = this.physics.add.sprite(400, upperPipe.y + 100, 'pipe').setOrigin(0, 0)
+
+  this.input.on('pointerdown', flap)
+
+  this.input.keyboard.on('keydown_SPACE', flap)
+  // bird.body.velocity.x = VELOCITY
   // bird.body.gravity.y = 200;
 }
 
@@ -28,6 +50,9 @@ function create() {
 // t1 = 200px/s
 // t2 = 400px/s
 function update(time, delta) {
+  if(bird.y - bird.height <= 0  || bird.y >= config.height - bird.height){
+    restartBirdPosition()
+  }
   // console.log(delta);
   // totalDelta += delta;
   // if (totalDelta < 1000) {
@@ -46,9 +71,7 @@ const config = {
     //Arcade physics plugin
     default: "arcade",
     arcade: {
-      gravity: {
-        y: 200,
-      },
+      debug: true,
     },
   },
   scene: {
@@ -57,5 +80,7 @@ const config = {
     update,
   },
 };
+
+const initialBirdPosition = {x: config.width * 0.1, y: config.height /2 }
 
 new Phaser.Game(config);
