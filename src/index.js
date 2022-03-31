@@ -1,10 +1,31 @@
-import Phaser from "phaser";
+import Phaser from 'phaser';
+
+
+const config = {
+  //WebGL ( Web Grachics Library) JS API for rendering 2D and 3D graphics
+  type: Phaser.AUTO,
+  width: 800,
+  height: 600,
+  physics: {
+      //Arcade physics plugin
+      default: 'arcade',
+      arcade: {
+          debug: true,
+      },
+  },
+  scene: {
+      preload,
+      create,
+      update,
+  },
+};
+
 
 //Loading Assets, such as images, music, animations ...
 function preload() {
-  this.load.image("sky", "assets/sky.png");
-  this.load.image("bird", "assets/bird.png");
-  this.load.image('pipe', "assets/pipe.png")
+    this.load.image('sky', 'assets/sky.png');
+    this.load.image('bird', 'assets/bird.png');
+    this.load.image('pipe', 'assets/pipe.png');
 }
 
 // create objects instance
@@ -14,73 +35,81 @@ function preload() {
 // To have the full screen can i add as argument the half of the width and height or setOrigin to 0
 
 // const VELOCITY = 200
-const flapVelocity = 250
+const PIPES_TO_RENDER = 10;
+
+const flapVelocity = 250;
+
 let bird = null;
-let upperPipe = null;
-let lowerPipe = null;
+let pipes = null;
+let pipeVerticalDistanceRange = [150, 250];
+let pipeHorizontalDistanceRange = [100, 150];
+let pipeHorizontalDistance = 0;
+let pipeVerticalDistance = 0;
+
 function flap() {
-  bird.body.velocity.y = -flapVelocity
+    bird.body.velocity.y = -flapVelocity;
 }
 
 function restartBirdPosition() {
-  bird.x = initialBirdPosition.x;
-  bird.y = initialBirdPosition.y;
-  bird.body.velocity.y = 0
+    bird.x = initialBirdPosition.x;
+    bird.y = initialBirdPosition.y;
+    bird.body.velocity.y = 0;
 }
 
+function placePipe(uPipe, lPipe) {
+    pipeVerticalDistance = Phaser.Math.Between(...pipeVerticalDistanceRange);
+    pipeHorizontalDistance += Phaser.Math.Between(...pipeHorizontalDistanceRange);
+    pipeHorizontalDistance += Phaser.Math.Between(...pipeHorizontalDistanceRange);
+
+    // upperPipe = this.physics.add.sprite(pipeHorizontalDistance, pipeVerticalDistance, 'pipe').setOrigin(0, 1);
+    // lowerPipe = this.physics.add.sprite(pipeHorizontalDistance, upperPipe.y + pipeVerticalDistance, 'pipe').setOrigin(0, 0);
+
+    uPipe.x = pipeHorizontalDistance;
+    uPipe.y = pipeVerticalDistance;
+
+    lPipe.x = pipeHorizontalDistance;
+    lPipe.y = uPipe.y + pipeVerticalDistance;
+}
+
+const initialBirdPosition = { x: config.width * 0.1, y: config.height / 2 };
+
 function create() {
-  this.add.image(0, 0, "sky").setOrigin(0);
-  bird = this.physics.add.sprite(initialBirdPosition.x, initialBirdPosition.y, "bird");
-  bird.body.gravity.y = 400;
+    this.add.image(0, 0, 'sky').setOrigin(0);
+    bird = this.physics.add.sprite(initialBirdPosition.x, initialBirdPosition.y, 'bird');
+    bird.body.gravity.y = 400;
 
-  upperPipe = this.physics.add.sprite(400, 100, 'pipe').setOrigin(0, 1)
-  lowerPipe = this.physics.add.sprite(400, upperPipe.y + 100, 'pipe').setOrigin(0, 0)
+    pipes = this.physics.add.group();
 
-  this.input.on('pointerdown', flap)
+    for (let i = 0; i < PIPES_TO_RENDER; i++) {
+        const upperPipe = pipes.create(0, 0, 'pipe').setOrigin(0, 1);
+        const lowerPipe = pipes.create(0, 0, 'pipe').setOrigin(0, 0);
+        placePipe(upperPipe, lowerPipe);
+    }
 
-  this.input.keyboard.on('keydown_SPACE', flap)
-  // bird.body.velocity.x = VELOCITY
-  // bird.body.gravity.y = 200;
+    pipes.setVelocityX(-100)
+
+    this.input.on('pointerdown', flap);
+
+    this.input.keyboard.on('keydown_SPACE', flap);
 }
 
 // 60 fps
 // 60 times per second
 // 60 * 16ms = 1000ms
-//Gravity t0 = 0px/s
+//Gravity t0 = 0px/
 // t1 = 200px/s
 // t2 = 400px/s
 function update(time, delta) {
-  if(bird.y - bird.height <= 0  || bird.y >= config.height - bird.height){
-    restartBirdPosition()
-  }
-  // console.log(delta);
-  // totalDelta += delta;
-  // if (totalDelta < 1000) {
-  //   return;
-  // }
-  // console.log(bird.body.velocity.y);
-  // totalDelta = 0;
+    if (bird.y - bird.height <= 0 || bird.y >= config.height - bird.height) {
+        restartBirdPosition();
+    }
+    // console.log(delta);
+    // totalDelta += delta;
+    // if (totalDelta < 1000) {
+    //   return;
+    // }
+    // console.log(bird.body.velocity.y);
+    // totalDelta = 0;
 }
-
-const config = {
-  //WebGL ( Web Grachics Library) JS API for rendering 2D and 3D graphics
-  type: Phaser.AUTO,
-  width: 800,
-  height: 600,
-  physics: {
-    //Arcade physics plugin
-    default: "arcade",
-    arcade: {
-      debug: true,
-    },
-  },
-  scene: {
-    preload,
-    create,
-    update,
-  },
-};
-
-const initialBirdPosition = {x: config.width * 0.1, y: config.height /2 }
 
 new Phaser.Game(config);
