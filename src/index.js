@@ -1,25 +1,20 @@
 import Phaser from 'phaser';
-
+import PlayScene from './scenes/PlayScene';
 
 const config = {
-  //WebGL ( Web Grachics Library) JS API for rendering 2D and 3D graphics
-  type: Phaser.AUTO,
-  width: 800,
-  height: 600,
-  physics: {
-      //Arcade physics plugin
-      default: 'arcade',
-      arcade: {
-          debug: true,
-      },
-  },
-  scene: {
-      preload,
-      create,
-      update,
-  },
+    //WebGL ( Web Grachics Library) JS API for rendering 2D and 3D graphics
+    type: Phaser.AUTO,
+    width: 800,
+    height: 600,
+    physics: {
+        //Arcade physics plugin
+        default: 'arcade',
+        arcade: {
+            debug: true,
+        },
+    },
+    scene: [PlayScene]
 };
-
 
 //Loading Assets, such as images, music, animations ...
 function preload() {
@@ -41,8 +36,9 @@ const flapVelocity = 250;
 
 let bird = null;
 let pipes = null;
+
 let pipeVerticalDistanceRange = [150, 250];
-let pipeHorizontalDistanceRange = [100, 150];
+let pipeHorizontalDistanceRange = [300, 500];
 let pipeHorizontalDistance = 0;
 let pipeVerticalDistance = 0;
 
@@ -57,18 +53,39 @@ function restartBirdPosition() {
 }
 
 function placePipe(uPipe, lPipe) {
+    const rightMostX = getRightMostPipe();
     pipeVerticalDistance = Phaser.Math.Between(...pipeVerticalDistanceRange);
-    pipeHorizontalDistance += Phaser.Math.Between(...pipeHorizontalDistanceRange);
-    pipeHorizontalDistance += Phaser.Math.Between(...pipeHorizontalDistanceRange);
+    pipeHorizontalDistance = Phaser.Math.Between(...pipeHorizontalDistanceRange);
 
     // upperPipe = this.physics.add.sprite(pipeHorizontalDistance, pipeVerticalDistance, 'pipe').setOrigin(0, 1);
     // lowerPipe = this.physics.add.sprite(pipeHorizontalDistance, upperPipe.y + pipeVerticalDistance, 'pipe').setOrigin(0, 0);
 
-    uPipe.x = pipeHorizontalDistance;
+    uPipe.x = rightMostX + pipeHorizontalDistance;
     uPipe.y = pipeVerticalDistance;
 
-    lPipe.x = pipeHorizontalDistance;
+    lPipe.x = uPipe.x;
     lPipe.y = uPipe.y + pipeVerticalDistance;
+
+    function getRightMostPipe() {
+        let rightMostX = 0;
+        pipes.getChildren().forEach(function(pipe) {
+            rightMostX = Math.max(pipe.x, rightMostX);
+        });
+
+        return rightMostX;
+    }
+}
+
+function recyclePipss() {
+    const tempPipes = [];
+    pipes.getChildren().forEach(pipe => {
+        if (pipe.getBounds().right <= 0) {
+            tempPipes.push(pipe);
+            if (tempPipes.length === 2) {
+                placePipe(...tempPipes);
+            }
+        }
+    });
 }
 
 const initialBirdPosition = { x: config.width * 0.1, y: config.height / 2 };
@@ -86,7 +103,7 @@ function create() {
         placePipe(upperPipe, lowerPipe);
     }
 
-    pipes.setVelocityX(-100)
+    pipes.setVelocityX(-100);
 
     this.input.on('pointerdown', flap);
 
@@ -103,6 +120,8 @@ function update(time, delta) {
     if (bird.y - bird.height <= 0 || bird.y >= config.height - bird.height) {
         restartBirdPosition();
     }
+
+    recyclePipss();
     // console.log(delta);
     // totalDelta += delta;
     // if (totalDelta < 1000) {
